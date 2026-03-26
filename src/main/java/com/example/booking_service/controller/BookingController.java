@@ -13,6 +13,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*") 
 @RestController
 @RequestMapping("/api/v1/bookings")
 public class BookingController {
@@ -30,15 +31,12 @@ public class BookingController {
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
         try {
-            // 1. අදාළ Customer සහ Vehicle ඉන්නවාද කියා Feign Clients හරහා පරීක්ෂා කිරීම
             CustomerDTO customer = customerClient.getCustomerById(booking.getCustomerId());
             VehicleDTO vehicle = vehicleClient.getVehicleById(booking.getVehicleId());
 
             if (customer != null && vehicle != null) {
-                // 2. Booking එක Database එකේ Save කිරීම
                 Booking savedBooking = bookingRepository.save(booking);
 
-                // 3. Entity එක වෙනුවට Full Data සහිත DTO එකක් නිර්මාණය කර return කිරීම
                 BookingResponseDTO fullResponse = new BookingResponseDTO(
                     savedBooking.getId(),
                     savedBooking.getBookingDate(),
@@ -57,12 +55,10 @@ public class BookingController {
         }
     }
 
-    // 1. සියලුම Bookings ලබා ගැනීමට
     @GetMapping
     public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
         
-        // හැම Booking එකකටම අදාළ ඩේටා අනිත් සර්විස් වලින් අරගෙන ලැයිස්තුවක් හදනවා
         List<BookingResponseDTO> response = bookings.stream().map(booking -> {
             CustomerDTO customer = null;
             VehicleDTO vehicle = null;
@@ -71,7 +67,6 @@ public class BookingController {
                 customer = customerClient.getCustomerById(booking.getCustomerId());
                 vehicle = vehicleClient.getVehicleById(booking.getVehicleId());
             } catch (Exception e) {
-                // සර්විස් එකක් ඩවුන් නම් හෝ ඩේටා නැත්නම් null ලෙස පවතිනු ඇත
                 System.err.println("Error fetching details for booking " + booking.getId());
             }
 
@@ -87,7 +82,6 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    // 2. ID එක මගින් නිශ්චිත Booking එකක් ලබා ගැනීමට
     @GetMapping("/{id}")
     public ResponseEntity<Booking> getBookingById(@PathVariable String id) {
         return bookingRepository.findById(id)
@@ -95,7 +89,6 @@ public class BookingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 3. Booking එකක් මකා දැමීමට (Optional)
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteBooking(@PathVariable String id) {
         if (!bookingRepository.existsById(id)) {
@@ -105,15 +98,12 @@ public class BookingController {
         return ResponseEntity.ok("Booking deleted successfully!");
     }
 
-    // 4. Booking එකක තොරතුරු යාවත්කාලීන කිරීමට (Update)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBooking(@PathVariable String id, @RequestBody Booking bookingUpdates) {
         return bookingRepository.findById(id)
                 .map(existingBooking -> {
-                    // අවශ්‍ය Fields පමණක් මෙතැනදී update කළ හැක
                     existingBooking.setBookingDate(bookingUpdates.getBookingDate());
                     existingBooking.setAmount(bookingUpdates.getAmount());
-                    // customerId සහ vehicleId වෙනස් වනවා නම් ඒවාද මෙහිදී logic එකට අනුව එක් කළ හැක
                     
                     Booking updatedBooking = bookingRepository.save(existingBooking);
                     return ResponseEntity.ok(updatedBooking);

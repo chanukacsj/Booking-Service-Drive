@@ -8,10 +8,8 @@ public class VehicleDTO {
     private String fuelType;
     private String imageUrl; 
 
-    // Default Constructor
     public VehicleDTO() {}
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

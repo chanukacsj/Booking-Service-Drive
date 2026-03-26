@@ -7,10 +7,8 @@ public class CustomerDTO {
     private String nic;
     private String address;
 
-    // Default Constructor
     public CustomerDTO() {}
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
